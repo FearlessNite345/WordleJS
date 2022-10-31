@@ -1,0 +1,1 @@
+export const WordleGame = require('./wordle-game.js').default;
