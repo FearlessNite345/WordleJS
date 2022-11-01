@@ -1,1 +1,5 @@
-export const WordleGame = require('./wordle-game.js').default;
+const Canvas = require('canvas')
+
+Canvas.registerFont(`${__dirname}/assets/fonts/theboldfont.ttf`, { family: "Bold" });
+
+module.exports = require('./wordle-game');

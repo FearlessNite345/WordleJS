@@ -2,9 +2,15 @@
   "name": "wordlejs",
   "version": "1.0.0",
   "description": "WordleJS allows you to easily create a wordle game for DiscordJS",
-  "main": "index.js",
+  "main": "index",
+  "typings": "index",
+
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/FearlessNite345/WordleJS"
   },
   "keywords": [
     "discord",
@@ -18,5 +24,5 @@
     "canvas": "^2.10.1"
   },
   "author": "FearlessStudios",
-  "license": "MIT"
+  "license": "ISC"
 }

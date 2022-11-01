@@ -1,6 +1,6 @@
-import { createCanvas, loadImage } from 'canvas';
-import { AttachmentBuilder, ChatInputCommandInteraction, User } from 'discord.js';
-import { Delay } from './helper';
+const { createCanvas, loadImage } = require('canvas');
+const { AttachmentBuilder, ChatInputCommandInteraction, User } = require('discord.js');
+const { Delay } = require('./helper');
 
 /**
  *
@@ -28,13 +28,21 @@ const GetImageNumber = (guessLetter, answerLetter, i) => {
   }
 };
 
-export default class WordleGame {
+class WordleGame {
   /**
    *
    * @param {ChatInputCommandInteraction} interaction
+   * @param {Number} timeout
    */
-  constructor(interaction) {
+  constructor(interaction, timeout) {
+    if(interaction == undefined || null){
+      throw new Error('Interaction param is null or undefined');
+    }else if(timeout == undefined || null){
+      throw new Error('Timeout param is null or undefined');
+    }
+
     this.interaction = interaction;
+    this.timeout = timeout * 60;
   }
 
   GetAnswer() {
@@ -45,6 +53,12 @@ export default class WordleGame {
 
   async StartGame() {
     const answer = this.GetAnswer();
+    const GameOverview = {
+      isWin: undefined,
+      GuessesTaken: 0,
+      Complete: false,
+      Timedout: false
+    }
 
     const newGame = {
       UserId: this.interaction.user.id,
@@ -84,6 +98,8 @@ export default class WordleGame {
 
         if (m.content.toLowerCase() == '!quit') {
           msgCollector.stop();
+          GameOverview.Complete = true
+          GameOverview.GuessesTaken = newGame.Guesses.length
           return await this.interaction.editReply({ content: 'Game Stopped' });
         }
 
@@ -118,9 +134,14 @@ export default class WordleGame {
         if (guess.toLowerCase() == answer.toLowerCase()) {
           Won(this.interaction, newGame, answer);
           msgCollector.stop();
+          GameOverview.isWin = true
+          GameOverview.GuessesTaken = newGame.Guesses.length
+          GameOverview.Complete = true
         } else if (newGame.Guesses.length == 6) {
           Lost(this.interaction, newGame, answer);
           msgCollector.stop();
+          GameOverview.GuessesTaken = newGame.Guesses.length
+          GameOverview.Complete = true
         } else {
           const { canvas } = await BuildCanvas(
             this.interaction.user,
@@ -139,7 +160,19 @@ export default class WordleGame {
       }
     });
 
-    //return attachment;
+    var currentTime = 0
+    var gameTimeout = 1200
+    while(GameOverview.Complete == false){
+      if(currentTime == gameTimeout){
+        GameOverview.Timedout = true;
+        await this.interaction.editReply({ content: 'Game Timedout! Cause it was afk for 20 minutes' });
+        break;
+      }
+      await Delay(1)
+      currentTime++
+    }
+
+    return GameOverview;
   }
 };
 
@@ -152,7 +185,7 @@ async function BuildCanvas(user, newGame, answer) {
   const canvas = createCanvas(350, 537);
   const context = canvas.getContext('2d');
 
-  const background = await loadImage(`${__dirname}/images/BG.png`);
+  const background = await loadImage(`${__dirname}/assets/images/BG.png`);
   context.drawImage(background, 0, 0, canvas.width, canvas.height);
 
   context.textAlign = 'center';
@@ -165,16 +198,16 @@ async function BuildCanvas(user, newGame, answer) {
   context.fillStyle = '#d7dadc';
 
   const absentSquare = await loadImage(
-    `${__dirname}/images/ColorAbsent.png`
+    `${__dirname}/assets/images/ColorAbsent.png`
   );
   const emptySquare = await loadImage(
-    `${__dirname}/images/EmptySquare.png`
+    `${__dirname}/assets/images/EmptySquare.png`
   );
   const greenSquare = await loadImage(
-    `${__dirname}/images/GreenSquare.png`
+    `${__dirname}/assets/images/GreenSquare.png`
   );
   const yellowSquare = await loadImage(
-    `${__dirname}/images/YellowSquare.png`
+    `${__dirname}/assets/images/YellowSquare.png`
   );
   let square = absentSquare;
 
@@ -241,6 +274,8 @@ async function Lost(i, newGame, answer) {
     components: [],
   });
 }
+
+module.exports.WordleGame = WordleGame
 
 const answers = [
   'aback',

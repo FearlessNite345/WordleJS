@@ -3,4 +3,4 @@ function Delay(time) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-export const Delay = Delay;
+module.exports.Delay = Delay;
