@@ -31,8 +31,8 @@ const GetImageNumber = (guessLetter, answerLetter, i) => {
 class WordleGame {
   /**
    *
-   * @param {ChatInputCommandInteraction} interaction
-   * @param {Number} timeout
+   * @param {ChatInputCommandInteraction} interaction // This is a DiscordJS Interaction
+   * @param {Number} timeout // How many minutes you want to wait before the game timeouts
    */
   constructor(interaction, timeout) {
     if(interaction == undefined || null){
@@ -161,9 +161,8 @@ class WordleGame {
     });
 
     var currentTime = 0
-    var gameTimeout = 1200
     while(GameOverview.Complete == false){
-      if(currentTime == gameTimeout){
+      if(currentTime == this.timeout){
         GameOverview.Timedout = true;
         await this.interaction.editReply({ content: 'Game Timedout! Cause it was afk for 20 minutes' });
         break;
