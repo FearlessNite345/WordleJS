@@ -1,3 +1,4 @@
+const { EmbedBuilder } = require('discord.js');
 const { createCanvas, loadImage } = require('canvas');
 const { AttachmentBuilder, ChatInputCommandInteraction, User } = require('discord.js');
 const { Delay } = require('./helper');
@@ -28,6 +29,12 @@ const GetImageNumber = (guessLetter, answerLetter, i) => {
   }
 };
 
+function GetAnswer() {
+  //randomly select answer from list of 600 words
+  var j = Math.floor(Math.random() * answers.length);
+  return answers[j].toLowerCase();
+}
+
 class WordleGame {
   /**
    *
@@ -47,14 +54,29 @@ class WordleGame {
     this.guessPrefix = guessPrefix
   }
 
-  GetAnswer() {
-    //randomly select answer from list of 600 words
-    var j = Math.floor(Math.random() * answers.length);
-    return answers[j].toLowerCase();
+  createHelpEmbed(){
+    const embed = new EmbedBuilder()
+      .setTitle('Wordle Help')
+      .setAuthor({ name: 'WordleJS', iconURL: '' })
+      .setColor('Blurple')
+      .setDescription('This will tell you how to play wordle')
+      .setFields(
+        {
+          name: 'How to guess word',
+          value: `You can guess a word by using \' ${this.guessPrefix} <word> \''`
+        },
+        {
+          name: 'How to quit the game early',
+          value: 'You can quit the game early by using ` !quit `'
+        }
+        )
+      .setTimestamp()
+      
+    return embed
   }
 
   async StartGame() {
-    const answer = this.GetAnswer();
+    const answer = GetAnswer();
     const GameOverview = {
       isWin: undefined, // Tells you if it was a Win or Lose or it will return undefined if the game Timedout
       GuessesTaken: 0, // The amount of gusses the user used to get it right
@@ -166,7 +188,7 @@ class WordleGame {
     while(GameOverview.Complete == false){
       if(currentTime == this.timeout){
         GameOverview.Timedout = true;
-        await this.interaction.editReply({ content: `Game Timedout! Cause it was afk for ${this.timeout} minutes` });
+        await this.interaction.editReply({ content: `Game Timedout! Cause it was afk for ${this.timeout / 60} minutes` });
         break;
       }
       await Delay(1)
