@@ -31,10 +31,11 @@ const GetImageNumber = (guessLetter, answerLetter, i) => {
 class WordleGame {
   /**
    *
-   * @param {ChatInputCommandInteraction} interaction // This is a DiscordJS Interaction
+   * @param {ChatInputCommandInteraction} interaction // This is a DiscordJS Chat Input Command Interaction
    * @param {Number} timeout // How many minutes you want to wait before the game timeouts
+   * @param {String} guessPrefix // This allows you to pass in your custom prefix for user guessing words by default it is !guess
    */
-  constructor(interaction, timeout) {
+  constructor(interaction, timeout, guessPrefix = '!guess') {
     if(interaction == undefined || null){
       throw new Error('Interaction param is null or undefined');
     }else if(timeout == undefined || null){
@@ -43,6 +44,7 @@ class WordleGame {
 
     this.interaction = interaction;
     this.timeout = timeout * 60;
+    this.guessPrefix = guessPrefix
   }
 
   GetAnswer() {
@@ -54,10 +56,10 @@ class WordleGame {
   async StartGame() {
     const answer = this.GetAnswer();
     const GameOverview = {
-      isWin: undefined,
-      GuessesTaken: 0,
-      Complete: false,
-      Timedout: false
+      isWin: undefined, // Tells you if it was a Win or Lose or it will return undefined if the game Timedout
+      GuessesTaken: 0, // The amount of gusses the user used to get it right
+      Complete: false, // If the game is completed or not
+      Timedout: false // If the game timedout for the user not responding in time
     }
 
     const newGame = {
@@ -78,7 +80,7 @@ class WordleGame {
     });
 
     const filter = (m) => {
-      const filteredItems = ['!g', '!guess', '!quit'];
+      const filteredItems = [this.guessPrefix, '!quit'];
       for (let i = 0; i < filteredItems.length; i++) {
         if (m.content.startsWith(filteredItems[i])) {
           return true;
