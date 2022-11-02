@@ -166,7 +166,7 @@ class WordleGame {
     while(GameOverview.Complete == false){
       if(currentTime == this.timeout){
         GameOverview.Timedout = true;
-        await this.interaction.editReply({ content: 'Game Timedout! Cause it was afk for 20 minutes' });
+        await this.interaction.editReply({ content: `Game Timedout! Cause it was afk for ${this.timeout} minutes` });
         break;
       }
       await Delay(1)
