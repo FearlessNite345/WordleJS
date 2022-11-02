@@ -63,7 +63,7 @@ class WordleGame {
       .setFields(
         {
           name: 'How to guess word',
-          value: `You can guess a word by using \' ${this.guessPrefix} <word> \''`
+          value: `You can guess a word by using \` ${this.guessPrefix} <word> \``
         },
         {
           name: 'How to quit the game early',
