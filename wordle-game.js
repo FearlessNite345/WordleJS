@@ -57,7 +57,7 @@ class WordleGame {
   createHelpEmbed(){
     const embed = new EmbedBuilder()
       .setTitle('Wordle Help')
-      .setAuthor({ name: 'WordleJS', iconURL: '' })
+      .setAuthor({ name: 'WordleJS' })
       .setColor('Blurple')
       .setDescription('This will tell you how to play wordle')
       .setFields(
