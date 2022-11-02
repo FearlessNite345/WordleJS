@@ -34,14 +34,14 @@ The steps to get this to work are listed below
 const { WordleGame } = require('@fearlessstudios/wordlejs')
 
 // Define a new wordle game class
-const wordleGame = await new WordleGame(interaction, 20, '!guess');
+const wordleGame = new WordleGame(interaction, 20, '!guess');
 
 // To start the game do
-wordleGame.StartGame(interaction, 20, '!guess') 
+await wordleGame.StartGame(interaction, 20, '!guess') 
 // This will return a javascript object
 
 // To generate a help embed to send to users for help on this game do
-wordleGame.createHelpEmbed() 
+await wordleGame.createHelpEmbed() 
 // This will return a EmbedBuilder
 ```
 
