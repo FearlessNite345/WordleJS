@@ -29,6 +29,8 @@ npm i @fearlessstudios/wordlejs
 | ---------- | ------------------------------------------------------------ |
 | WordleGame | ChatInputCommandInteraction (from Discord.js), WordleOptions |
 
+---
+
 | Objects    | Values                                  |
 | ---------- | --------------------------------------- |
 | GameStates | Won, Lost, Timed_out, QuitEarly, Playing |
