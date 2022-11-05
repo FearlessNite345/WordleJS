@@ -23,27 +23,43 @@ npm i @fearlessstudios/wordlejs
 | DiscordJS    | https://discord.js.org               |
 | Canvas       | https://www.npmjs.com/package/canvas |
 
+## Documentation
+
+| Classes    | Params                                                       |
+| ---------- | ------------------------------------------------------------ |
+| WordleGame | ChatInputCommandInteraction (from Discord.js), WordleOptions |
+
+| Objects    | Values                                  |
+| ---------- | --------------------------------------- |
+| GameStates | Won, Lost, Timed_out, QuitEarly, Playing |
+
 ## Setup
 
 The steps to get this to work are listed below
 
-##### WordleJS setup
-
 ```js
 // Get the WordleGame class from the package
-const { WordleGame } = require('@fearlessstudios/wordlejs')
+// Get the GameStates object from the package
+const { WordleGame, GameStates } = require('@fearlessstudios/wordlejs');
 
 // Define a new wordle game class
-const wordleGame = new WordleGame(interaction, 20, '!guess');
+// The options param is completely optional its just there for customization
+const wordleGame = new WordleGame(interaction);
 
 // To start the game do
-await wordleGame.StartGame(interaction, 20, '!guess') 
-// This will return a javascript object
+await wordleGame.StartGame();
+/* This will return GameOverview object 
+{
+    Status: string, // This returns one of the GameStates
+    GuessesTaken: number, // The amount of gusses the user used to get it right
+}
+*/
 
 // To generate a help embed to send to users for help on this game do
-await wordleGame.createHelpEmbed() 
+await wordleGame.createHelpEmbed();
 // This will return a EmbedBuilder
 ```
 
 ## Support
+
 If you have any issues at all please submit a issue via the github repo

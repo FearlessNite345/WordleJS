@@ -1,7 +1,11 @@
 const { EmbedBuilder } = require('discord.js');
-const { createCanvas, loadImage } = require('canvas');
-const { AttachmentBuilder, ChatInputCommandInteraction, User } = require('discord.js');
-const { Delay } = require('./helper');
+const { createCanvas, loadImage, Canvas } = require('canvas');
+const {
+  AttachmentBuilder,
+  ChatInputCommandInteraction,
+  User,
+} = require('discord.js');
+const { Delay, FormatNumber } = require('./helper');
 
 /**
  *
@@ -35,26 +39,41 @@ function GetAnswer() {
   return answers[j].toLowerCase();
 }
 
+const GameStates = {
+  Won: 'Won',
+  Lost: 'Lost',
+  Timed_out: 'Timed_out',
+  QuitEarly: 'QuitEarly',
+  Playing: 'Playing',
+};
+
+/**
+ * @typedef {Object} WordleOptions
+ * @property {number} timeout - The amount of minutes you want to wait before the game auto quits
+ * @property {string} guessPrefix - The prefix a user must type in order to guess a word
+ * @property {string} quitMsg - The message a user must type in order to quit the game
+ */
+
 class WordleGame {
   /**
-   *
-   * @param {ChatInputCommandInteraction} interaction // This is a DiscordJS Chat Input Command Interaction
-   * @param {Number} timeout // How many minutes you want to wait before the game timeouts
-   * @param {String} guessPrefix // This allows you to pass in your custom prefix for user guessing words by default it is !guess
+   * 
+   * @param {ChatInputCommandInteraction} interaction 
+   * @param {WordleOptions} options 
    */
-  constructor(interaction, timeout, guessPrefix = '!guess') {
-    if(interaction == undefined || null){
+  constructor(interaction, options = { timeout: null, guessPrefix: null, quitMsg: null }) {
+    if (interaction == undefined || null) {
       throw new Error('Interaction param is null or undefined');
-    }else if(timeout == undefined || null){
-      throw new Error('Timeout param is null or undefined');
+    }
+    if(options != null){
+      this.timeout = options.timeout == null ? 15 * 60 : options.timeout * 60;
+      this.guessPrefix = options.guessPrefix == null ? '!guess' : options.guessPrefix;
+      this.quitMsg = options.quitMsg == null ? '!quit' : options.quitMsg;
     }
 
     this.interaction = interaction;
-    this.timeout = timeout * 60;
-    this.guessPrefix = guessPrefix
   }
 
-  createHelpEmbed(){
+  createHelpEmbed() {
     const embed = new EmbedBuilder()
       .setTitle('Wordle Help')
       .setAuthor({ name: 'WordleJS' })
@@ -62,27 +81,45 @@ class WordleGame {
       .setDescription('This will tell you how to play wordle')
       .setFields(
         {
-          name: 'How to guess word',
-          value: `You can guess a word by using \` ${this.guessPrefix} <word> \``
+          name: 'The aim of the game',
+          value: `Your challenge is to guess a five-letter word in six attempts.`,
+        },
+        {
+          name: 'Colored Tiles',
+          value: `- Green tile means that letter is in the correct position
+          - Yellow tile means the letter is in the word but in the wrong position
+          - Gray tile means that letter is not in the word at all`,
+        },
+        {
+          name: 'Game Tips',
+          value: `- Answers are never plurals
+          - Letters can be used more than once`,
+        },
+        {
+          name: 'Current amount of possible answers',
+          value: `${FormatNumber(answers.length)}`,
+        },
+        {
+          name: 'How to guess a word',
+          value: `You can guess a word by using \` ${this.guessPrefix} <word> \`
+          Example: \` ${this.guessPrefix} later \``,
         },
         {
           name: 'How to quit the game early',
-          value: 'You can quit the game early by using ` !quit `'
+          value: `You can quit the game early by using \` ${this.quitMsg} \``,
         }
-        )
-      .setTimestamp()
-      
-    return embed
+      )
+      .setTimestamp();
+
+    return embed;
   }
 
   async StartGame() {
     const answer = GetAnswer();
     const GameOverview = {
-      isWin: undefined, // Tells you if it was a Win or Lose or it will return undefined if the game Timedout
+      Status: GameStates.Playing, // Tells you if it was a Win or Lose or it will return undefined if the game Timed_out
       GuessesTaken: 0, // The amount of gusses the user used to get it right
-      Complete: false, // If the game is completed or not
-      Timedout: false // If the game timedout for the user not responding in time
-    }
+    };
 
     const newGame = {
       UserId: this.interaction.user.id,
@@ -90,11 +127,12 @@ class WordleGame {
       Guesses: new Array(),
     };
 
-    const { canvas } = await BuildCanvas(
+    const canvas = await BuildCanvas(
       this.interaction.user,
       newGame,
       answer
     );
+
     const attachment = new AttachmentBuilder(canvas.toBuffer(), 'Wordle.png');
 
     await this.interaction.reply({
@@ -102,7 +140,7 @@ class WordleGame {
     });
 
     const filter = (m) => {
-      const filteredItems = [this.guessPrefix, '!quit'];
+      const filteredItems = [this.guessPrefix, this.quitMsg];
       for (let i = 0; i < filteredItems.length; i++) {
         if (m.content.startsWith(filteredItems[i])) {
           return true;
@@ -122,8 +160,8 @@ class WordleGame {
 
         if (m.content.toLowerCase() == '!quit') {
           msgCollector.stop();
-          GameOverview.Complete = true
-          GameOverview.GuessesTaken = newGame.Guesses.length
+          GameOverview.Status = GameStates.QuitEarly;
+          GameOverview.GuessesTaken = newGame.Guesses.length;
           return await this.interaction.editReply({ content: 'Game Stopped' });
         }
 
@@ -158,16 +196,15 @@ class WordleGame {
         if (guess.toLowerCase() == answer.toLowerCase()) {
           Won(this.interaction, newGame, answer);
           msgCollector.stop();
-          GameOverview.isWin = true
-          GameOverview.GuessesTaken = newGame.Guesses.length
-          GameOverview.Complete = true
+          GameOverview.Status = GameStates.Won;
+          GameOverview.GuessesTaken = newGame.Guesses.length;
         } else if (newGame.Guesses.length == 6) {
           Lost(this.interaction, newGame, answer);
           msgCollector.stop();
-          GameOverview.GuessesTaken = newGame.Guesses.length
-          GameOverview.Complete = true
+          GameOverview.Status = GameStates.Lost;
+          GameOverview.GuessesTaken = newGame.Guesses.length;
         } else {
-          const { canvas } = await BuildCanvas(
+          const canvas = await BuildCanvas(
             this.interaction.user,
             newGame,
             answer
@@ -184,25 +221,29 @@ class WordleGame {
       }
     });
 
-    var currentTime = 0
-    while(GameOverview.Complete == false){
-      if(currentTime == this.timeout){
-        GameOverview.Timedout = true;
-        await this.interaction.editReply({ content: `Game Timedout! Cause it was afk for ${this.timeout / 60} minutes` });
+    var currentTime = 0;
+    while (GameOverview.Status == GameStates.Playing) {
+      if (currentTime == this.timeout) {
+        GameOverview.Status = GameStates.Timed_out;
+        await this.interaction.editReply({
+          content: `Game Timed Out! Cause it was afk for ${
+            this.timeout / 60
+          } minute(s)`,
+        });
         break;
       }
-      await Delay(1)
-      currentTime++
+      await Delay(1);
+      currentTime++;
     }
 
     return GameOverview;
   }
-};
+}
 
 /**
  *
  * @param {User} user
- * @returns
+ * @returns {Promise<Canvas>}
  */
 async function BuildCanvas(user, newGame, answer) {
   const canvas = createCanvas(350, 537);
@@ -273,11 +314,11 @@ async function BuildCanvas(user, newGame, answer) {
     rowOffset += squareSize + 5;
   }
 
-  return { canvas, context };
+  return canvas;
 }
 
 async function Won(i, newGame, answer) {
-  const { canvas } = await BuildCanvas(i.user, newGame, answer);
+  const canvas = await BuildCanvas(i.user, newGame, answer);
   const attachment = new AttachmentBuilder(canvas.toBuffer(), 'Wordle.png');
 
   await i.editReply({
@@ -288,7 +329,7 @@ async function Won(i, newGame, answer) {
 }
 
 async function Lost(i, newGame, answer) {
-  const { canvas } = await BuildCanvas(i.user, newGame, answer);
+  const canvas = await BuildCanvas(i.user, newGame, answer);
   const attachment = new AttachmentBuilder(canvas.toBuffer(), 'Wordle.png');
 
   await i.editReply({
@@ -298,7 +339,10 @@ async function Lost(i, newGame, answer) {
   });
 }
 
-module.exports.WordleGame = WordleGame
+module.exports = {
+  WordleGame: WordleGame,
+  GameStates: GameStates
+}
 
 const answers = [
   'aback',
