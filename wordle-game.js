@@ -52,7 +52,8 @@ const GameStates = {
  * @property {number} timeout - The amount of minutes you want to wait before the game auto quits
  * @property {string} guessPrefix - The prefix a user must type in order to guess a word
  * @property {string} quitMsg - The message a user must type in order to quit the game
- */
+ * @property {boolean} debugMode - This allows you to put this in debug mode to log info such as the answer for that game
+*/
 
 class WordleGame {
   /**
@@ -60,14 +61,15 @@ class WordleGame {
    * @param {ChatInputCommandInteraction} interaction 
    * @param {WordleOptions} options 
    */
-  constructor(interaction, options = { timeout: null, guessPrefix: null, quitMsg: null }) {
+  constructor(interaction, options = { timeout: 15, guessPrefix: '!guess', quitMsg: '!quit', debugMode: false}) {
     if (interaction == undefined || null) {
       throw new Error('Interaction param is null or undefined');
     }
     if(options != null){
-      this.timeout = options.timeout == null ? 15 * 60 : options.timeout * 60;
-      this.guessPrefix = options.guessPrefix == null ? '!guess' : options.guessPrefix;
-      this.quitMsg = options.quitMsg == null ? '!quit' : options.quitMsg;
+      this.timeout = options.timeout * 60;
+      this.guessPrefix = options.guessPrefix;
+      this.quitMsg = options.quitMsg;
+      this.debugMode = options.debugMode;
     }
 
     this.interaction = interaction;
@@ -116,6 +118,9 @@ class WordleGame {
 
   async StartGame() {
     const answer = GetAnswer();
+    if(this.debugMode){
+      console.log(`The answer for user ${this.interaction.user.id} is ${answer}`)
+    }
     const GameOverview = {
       Status: GameStates.Playing, // Tells you if it was a Win or Lose or it will return undefined if the game Timed_out
       GuessesTaken: 0, // The amount of gusses the user used to get it right
@@ -225,7 +230,7 @@ class WordleGame {
     while (GameOverview.Status == GameStates.Playing) {
       if (currentTime == this.timeout) {
         GameOverview.Status = GameStates.Timed_out;
-        await this.interaction.editReply({
+        await this.interaction.followUp({
           content: `Game Timed Out! Cause it was afk for ${
             this.timeout / 60
           } minute(s)`,
